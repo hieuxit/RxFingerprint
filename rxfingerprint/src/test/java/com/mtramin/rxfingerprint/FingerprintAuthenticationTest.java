@@ -49,6 +49,9 @@ public class FingerprintAuthenticationTest {
     Context mockContext;
 
     @Mock
+    FingerprintModule mockModule;
+
+    @Mock
     FingerprintManager mockFingerprintManager;
 
     @Before
@@ -63,13 +66,13 @@ public class FingerprintAuthenticationTest {
         when(mockContext.getSystemService(Context.FINGERPRINT_SERVICE)).thenReturn(mockFingerprintManager);
         when(FingerprintApiProvider.getFingerprintManager(mockContext)).thenReturn(mockFingerprintManager);
         when(FingerprintApiProvider.createCancellationSignal()).thenReturn(mock(CancellationSignal.class));
-		when(RxFingerprint.isUnavailable(mockContext)).thenReturn(false);
+        when(RxFingerprint.isUnavailable(mockContext)).thenReturn(false);
     }
 
     @Test
     public void testFingerprintNotAvailable() throws Exception {
         when(RxFingerprint.isUnavailable(mockContext)).thenReturn(true);
-        FingerprintAuthenticationObservable.create(mockContext).subscribe(testSubscriber);
+        FingerprintAuthenticationObservable.create(mockContext, mockModule).subscribe(testSubscriber);
 
         testSubscriber.awaitTerminalEvent();
         testSubscriber.assertNoValues();
@@ -78,7 +81,7 @@ public class FingerprintAuthenticationTest {
 
     @Test
     public void testAuthenticationSuccessful() throws Exception {
-        FingerprintAuthenticationObservable.create(mockContext).subscribe(testSubscriber);
+        FingerprintAuthenticationObservable.create(mockContext, mockModule).subscribe(testSubscriber);
         AuthenticationResult result = mock(AuthenticationResult.class);
 
         ArgumentCaptor<FingerprintManager.AuthenticationCallback> callbackCaptor = ArgumentCaptor.forClass(FingerprintManager.AuthenticationCallback.class);
@@ -99,7 +102,7 @@ public class FingerprintAuthenticationTest {
 
     @Test
     public void testAuthenticationError() throws Exception {
-        FingerprintAuthenticationObservable.create(mockContext).subscribe(testSubscriber);
+        FingerprintAuthenticationObservable.create(mockContext, mockModule).subscribe(testSubscriber);
 
         ArgumentCaptor<FingerprintManager.AuthenticationCallback> callbackCaptor = ArgumentCaptor.forClass(FingerprintManager.AuthenticationCallback.class);
         verify(mockFingerprintManager).authenticate(any(CryptoObject.class), any(CancellationSignal.class), anyInt(), callbackCaptor.capture(), any(Handler.class));
@@ -118,7 +121,7 @@ public class FingerprintAuthenticationTest {
 
     @Test
     public void testAuthenticationFailed() throws Exception {
-        FingerprintAuthenticationObservable.create(mockContext).subscribe(testSubscriber);
+        FingerprintAuthenticationObservable.create(mockContext, mockModule).subscribe(testSubscriber);
 
         ArgumentCaptor<FingerprintManager.AuthenticationCallback> callbackCaptor = ArgumentCaptor.forClass(FingerprintManager.AuthenticationCallback.class);
         verify(mockFingerprintManager).authenticate(any(CryptoObject.class), any(CancellationSignal.class), anyInt(), callbackCaptor.capture(), any(Handler.class));
@@ -138,7 +141,7 @@ public class FingerprintAuthenticationTest {
 
     @Test
     public void testAuthenticationHelp() throws Exception {
-        FingerprintAuthenticationObservable.create(mockContext).subscribe(testSubscriber);
+        FingerprintAuthenticationObservable.create(mockContext, mockModule).subscribe(testSubscriber);
 
         ArgumentCaptor<FingerprintManager.AuthenticationCallback> callbackCaptor = ArgumentCaptor.forClass(FingerprintManager.AuthenticationCallback.class);
         verify(mockFingerprintManager).authenticate(any(CryptoObject.class), any(CancellationSignal.class), anyInt(), callbackCaptor.capture(), any(Handler.class));
@@ -158,7 +161,7 @@ public class FingerprintAuthenticationTest {
 
     @Test
     public void testAuthenticationSuccessfulOnSecondTry() throws Exception {
-        FingerprintAuthenticationObservable.create(mockContext).subscribe(testSubscriber);
+        FingerprintAuthenticationObservable.create(mockContext, mockModule).subscribe(testSubscriber);
 
         ArgumentCaptor<FingerprintManager.AuthenticationCallback> callbackCaptor = ArgumentCaptor.forClass(FingerprintManager.AuthenticationCallback.class);
         verify(mockFingerprintManager).authenticate(any(CryptoObject.class), any(CancellationSignal.class), anyInt(), callbackCaptor.capture(), any(Handler.class));

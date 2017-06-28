@@ -18,7 +18,6 @@ package com.mtramin.rxfingerprint;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.hardware.fingerprint.FingerprintManager;
 import android.os.Build;
 import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.support.annotation.NonNull;
@@ -56,6 +55,13 @@ import static android.Manifest.permission.USE_FINGERPRINT;
  * necessary hardware (a sensor) and the user has to have enrolled at least one fingerprint.
  */
 public class RxFingerprint {
+
+    private static FingerprintModule fingerprintModule;
+
+    static {
+        fingerprintModule = new AndroidFingerprintModule();
+    }
+
     /**
      * Authenticate the user with his fingerprint. This will enable the fingerprint sensor on the
      * device and wait for the user to touch the sensor with his finger.
@@ -69,7 +75,7 @@ public class RxFingerprint {
      * authentication was successful or has failed entirely.
      */
     public static Observable<FingerprintAuthenticationResult> authenticate(Context context) {
-        return FingerprintAuthenticationObservable.create(context);
+        return FingerprintAuthenticationObservable.create(context, fingerprintModule);
     }
 
     /**
@@ -96,7 +102,7 @@ public class RxFingerprint {
      * Will complete once the authentication and encryption were successful or have failed entirely.
      */
     public static Observable<FingerprintEncryptionResult> encrypt(Context context, String toEncrypt) {
-        return FingerprintEncryptionObservable.create(context, toEncrypt);
+        return FingerprintEncryptionObservable.create(context, fingerprintModule, toEncrypt);
     }
 
     /**
@@ -119,7 +125,7 @@ public class RxFingerprint {
      * decrypted string if decryption was successful.
      */
     public static Observable<FingerprintDecryptionResult> decrypt(Context context, String encrypted) {
-        return FingerprintDecryptionObservable.create(context, encrypted);
+        return FingerprintDecryptionObservable.create(context, fingerprintModule, encrypted);
     }
 
     /**
@@ -143,7 +149,7 @@ public class RxFingerprint {
      * Will complete once the authentication and encryption were successful or have failed entirely.
      */
     public static Observable<FingerprintEncryptionResult> encrypt(Context context, @NonNull String keyName, @NonNull String toEncrypt) {
-        return FingerprintEncryptionObservable.create(context, keyName, toEncrypt);
+        return FingerprintEncryptionObservable.create(context, fingerprintModule, keyName, toEncrypt);
     }
 
     /**
@@ -167,7 +173,7 @@ public class RxFingerprint {
      * @return Observable result of the decryption
      */
     public static Observable<FingerprintDecryptionResult> decrypt(Context context, @NonNull String keyName, @NonNull String encrypted) {
-        return FingerprintDecryptionObservable.create(context, keyName, encrypted);
+        return FingerprintDecryptionObservable.create(context, fingerprintModule, keyName, encrypted);
     }
 
     /**
@@ -207,16 +213,11 @@ public class RxFingerprint {
      */
     @SuppressWarnings("MissingPermission")
     public static boolean isHardwareDetected(@NonNull Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+        if (fingerprintModule == null) {
             return false;
         }
 
-        FingerprintManager fingerprintManager = FingerprintApiProvider.getFingerprintManager(context);
-        if (fingerprintManager == null) {
-            return false;
-        }
-
-        return fingerprintPermissionGranted(context) && fingerprintManager.isHardwareDetected();
+        return fingerprintModule.isHardwareDetected(context);
     }
 
     /**
@@ -230,15 +231,11 @@ public class RxFingerprint {
      */
     @SuppressWarnings("MissingPermission")
     public static boolean hasEnrolledFingerprints(@NonNull Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+        if (fingerprintModule == null) {
             return false;
         }
 
-        FingerprintManager fingerprintManager = FingerprintApiProvider.getFingerprintManager(context);
-        if (fingerprintManager == null) {
-            return false;
-        }
-        return fingerprintPermissionGranted(context) && fingerprintManager.hasEnrolledFingerprints();
+        return fingerprintModule.hasEnrolledFingerprints(context);
     }
 
     @RequiresApi(Build.VERSION_CODES.M)

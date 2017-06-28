@@ -18,9 +18,6 @@ package com.mtramin.rxfingerprint;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.hardware.fingerprint.FingerprintManager;
-import android.hardware.fingerprint.FingerprintManager.AuthenticationResult;
-import android.hardware.fingerprint.FingerprintManager.CryptoObject;
 import android.support.annotation.Nullable;
 
 import com.mtramin.rxfingerprint.data.FingerprintEncryptionResult;
@@ -51,85 +48,87 @@ import rx.Subscriber;
  * can only be used with fingerprint authentication and uses it once authentication was successful
  * to encrypt the given data.
  */
-@SuppressLint("NewApi") // SDK check happens in {@link FingerprintObservable#subscribe}
+@SuppressLint("NewApi")
+        // SDK check happens in {@link FingerprintObservable#subscribe}
 class FingerprintEncryptionObservable extends FingerprintObservable<FingerprintEncryptionResult> {
 
-	private final String keyName;
-	private final String toEncrypt;
-	private final EncodingProvider encodingProvider;
+    private final String keyName;
+    private final String toEncrypt;
+    private final EncodingProvider encodingProvider;
 
-	/**
-	 * Creates a new FingerprintEncryptionObservable that will listen to fingerprint authentication
-	 * to encrypt the given data.
-	 *
-	 * @param context   context to use
-	 * @param keyName   name of the key in the keystore
-	 * @param toEncrypt data to encrypt  @return Observable {@link FingerprintEncryptionResult}
-	 */
-	static Observable<FingerprintEncryptionResult> create(Context context, String keyName, String toEncrypt) {
-		return Observable.create(new FingerprintEncryptionObservable(context, keyName, toEncrypt, new Base64Provider()));
-	}
+    /**
+     * Creates a new FingerprintEncryptionObservable that will listen to fingerprint authentication
+     * to encrypt the given data.
+     *
+     * @param context   context to use
+     * @param keyName   name of the key in the keystore
+     * @param toEncrypt data to encrypt  @return Observable {@link FingerprintEncryptionResult}
+     */
+    static Observable<FingerprintEncryptionResult> create(Context context, FingerprintModule fingerprintModule,
+                                                          String keyName, String toEncrypt) {
+        return Observable.create(new FingerprintEncryptionObservable(context, fingerprintModule, keyName, toEncrypt, new Base64Provider()));
+    }
 
-	/**
-	 * Creates a new FingerprintEncryptionObservable that will listen to fingerprint authentication
-	 * to encrypt the given data.
-	 *
-	 * @param context   context to use
-	 * @param toEncrypt data to encrypt  @return Observable {@link FingerprintEncryptionResult}
-	 */
-	static Observable<FingerprintEncryptionResult> create(Context context, String toEncrypt) {
-		return Observable.create(new FingerprintEncryptionObservable(context, null, toEncrypt, new Base64Provider()));
-	}
+    /**
+     * Creates a new FingerprintEncryptionObservable that will listen to fingerprint authentication
+     * to encrypt the given data.
+     *
+     * @param context   context to use
+     * @param toEncrypt data to encrypt  @return Observable {@link FingerprintEncryptionResult}
+     */
+    static Observable<FingerprintEncryptionResult> create(Context context, FingerprintModule fingerprintModule, String toEncrypt) {
+        return Observable.create(new FingerprintEncryptionObservable(context, fingerprintModule, null, toEncrypt, new Base64Provider()));
+    }
 
-	private FingerprintEncryptionObservable(Context context, String keyName, String toEncrypt, EncodingProvider encodingProvider) {
-		super(context);
-		this.keyName = keyName;
+    private FingerprintEncryptionObservable(Context context, FingerprintModule fingerprintModule, String keyName, String toEncrypt, EncodingProvider encodingProvider) {
+        super(context, fingerprintModule);
+        this.keyName = keyName;
 
-		if (toEncrypt == null) {
-			throw new NullPointerException("String to be encrypted is null. Can only encrypt valid strings");
-		}
-		this.toEncrypt = toEncrypt;
-		this.encodingProvider = encodingProvider;
-	}
+        if (toEncrypt == null) {
+            throw new NullPointerException("String to be encrypted is null. Can only encrypt valid strings");
+        }
+        this.toEncrypt = toEncrypt;
+        this.encodingProvider = encodingProvider;
+    }
 
-	@Nullable
-	@Override
-	protected CryptoObject initCryptoObject(Subscriber<FingerprintEncryptionResult> subscriber) {
-		CryptoProvider cryptoProvider = new CryptoProvider(context, keyName);
-		try {
-			Cipher cipher = cryptoProvider.initEncryptionCipher();
-			return new CryptoObject(cipher);
-		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchProviderException | NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | UnrecoverableKeyException | KeyStoreException | IOException e) {
-			subscriber.onError(e);
-			return null;
-		}
+    @Nullable
+    @Override
+    protected CryptoObjectWrapper initCryptoObject(Subscriber<FingerprintEncryptionResult> subscriber) {
+        CryptoProvider cryptoProvider = new CryptoProvider(context, keyName);
+        try {
+            Cipher cipher = cryptoProvider.initEncryptionCipher();
+            return new CryptoObjectWrapper(cipher);
+        } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchProviderException | NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | UnrecoverableKeyException | KeyStoreException | IOException e) {
+            subscriber.onError(e);
+            return null;
+        }
 
-	}
+    }
 
-	@Override
-	protected void onAuthenticationSucceeded(Subscriber<FingerprintEncryptionResult> subscriber, AuthenticationResult result) {
-		try {
-			Cipher cipher = result.getCryptoObject().getCipher();
-			byte[] encryptedBytes = cipher.doFinal(toEncrypt.getBytes("UTF-8"));
-			byte[] ivBytes = cipher.getParameters().getParameterSpec(IvParameterSpec.class).getIV();
+    @Override
+    protected void onAuthenticationSucceeded(Subscriber<FingerprintEncryptionResult> subscriber, CryptoObjectWrapper result) {
+        try {
+            Cipher cipher = result.getCipher();
+            byte[] encryptedBytes = cipher.doFinal(toEncrypt.getBytes("UTF-8"));
+            byte[] ivBytes = cipher.getParameters().getParameterSpec(IvParameterSpec.class).getIV();
 
-			String encryptedString = CryptoData.fromBytes(encodingProvider, encryptedBytes, ivBytes).toString();
-			CryptoData.verifyCryptoDataString(encryptedString);
+            String encryptedString = CryptoData.fromBytes(encodingProvider, encryptedBytes, ivBytes).toString();
+            CryptoData.verifyCryptoDataString(encryptedString);
 
-			subscriber.onNext(new FingerprintEncryptionResult(FingerprintResult.AUTHENTICATED, null, encryptedString));
-			subscriber.onCompleted();
-		} catch (CryptoDataException | IllegalBlockSizeException | BadPaddingException | InvalidParameterSpecException | UnsupportedEncodingException e) {
-			subscriber.onError(e);
-		}
-	}
+            subscriber.onNext(new FingerprintEncryptionResult(FingerprintResult.AUTHENTICATED, null, encryptedString));
+            subscriber.onCompleted();
+        } catch (CryptoDataException | IllegalBlockSizeException | BadPaddingException | InvalidParameterSpecException | UnsupportedEncodingException e) {
+            subscriber.onError(e);
+        }
+    }
 
-	@Override
-	protected void onAuthenticationHelp(Subscriber<FingerprintEncryptionResult> subscriber, int helpMessageId, String helpString) {
-		subscriber.onNext(new FingerprintEncryptionResult(FingerprintResult.HELP, helpString, null));
-	}
+    @Override
+    protected void onAuthenticationHelp(Subscriber<FingerprintEncryptionResult> subscriber, int helpMessageId, String helpString) {
+        subscriber.onNext(new FingerprintEncryptionResult(FingerprintResult.HELP, helpString, null));
+    }
 
-	@Override
-	protected void onAuthenticationFailed(Subscriber<FingerprintEncryptionResult> subscriber) {
-		subscriber.onNext(new FingerprintEncryptionResult(FingerprintResult.FAILED, null, null));
-	}
+    @Override
+    protected void onAuthenticationFailed(Subscriber<FingerprintEncryptionResult> subscriber) {
+        subscriber.onNext(new FingerprintEncryptionResult(FingerprintResult.FAILED, null, null));
+    }
 }

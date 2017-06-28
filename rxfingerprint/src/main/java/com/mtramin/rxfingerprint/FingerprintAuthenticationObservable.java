@@ -17,8 +17,6 @@
 package com.mtramin.rxfingerprint;
 
 import android.content.Context;
-import android.hardware.fingerprint.FingerprintManager.AuthenticationResult;
-import android.hardware.fingerprint.FingerprintManager.CryptoObject;
 import android.support.annotation.Nullable;
 
 import com.mtramin.rxfingerprint.data.FingerprintAuthenticationResult;
@@ -32,41 +30,41 @@ import rx.Subscriber;
  */
 class FingerprintAuthenticationObservable extends FingerprintObservable<FingerprintAuthenticationResult> {
 
-	/**
-	 * Creates an Observable that will enable the fingerprint scanner of the device and listen for
-	 * the users fingerprint for authentication
-	 *
-	 * @param context context to use
-	 * @return Observable {@link FingerprintAuthenticationResult}
-	 */
-	static Observable<FingerprintAuthenticationResult> create(Context context) {
-		return Observable.create(new FingerprintAuthenticationObservable(context));
-	}
+    /**
+     * Creates an Observable that will enable the fingerprint scanner of the device and listen for
+     * the users fingerprint for authentication
+     *
+     * @param context context to use
+     * @return Observable {@link FingerprintAuthenticationResult}
+     */
+    static Observable<FingerprintAuthenticationResult> create(Context context, FingerprintModule fingerprintModule) {
+        return Observable.create(new FingerprintAuthenticationObservable(context, fingerprintModule));
+    }
 
-	private FingerprintAuthenticationObservable(Context context) {
-		super(context);
-	}
+    private FingerprintAuthenticationObservable(Context context, FingerprintModule fingerprintModule) {
+        super(context, fingerprintModule);
+    }
 
-	@Nullable
-	@Override
-	protected CryptoObject initCryptoObject(Subscriber<FingerprintAuthenticationResult> subscriber) {
-		// Simple authentication does not need CryptoObject
-		return null;
-	}
+    @Nullable
+    @Override
+    protected CryptoObjectWrapper initCryptoObject(Subscriber<FingerprintAuthenticationResult> subscriber) {
+        // Simple authentication does not need CryptoObject
+        return null;
+    }
 
-	@Override
-	protected void onAuthenticationSucceeded(Subscriber<FingerprintAuthenticationResult> subscriber, AuthenticationResult result) {
-		subscriber.onNext(new FingerprintAuthenticationResult(FingerprintResult.AUTHENTICATED, null));
-		subscriber.onCompleted();
-	}
+    @Override
+    protected void onAuthenticationSucceeded(Subscriber<FingerprintAuthenticationResult> subscriber, CryptoObjectWrapper cryptoObject) {
+        subscriber.onNext(new FingerprintAuthenticationResult(FingerprintResult.AUTHENTICATED, null));
+        subscriber.onCompleted();
+    }
 
-	@Override
-	protected void onAuthenticationHelp(Subscriber<FingerprintAuthenticationResult> subscriber, int helpMessageId, String helpString) {
-		subscriber.onNext(new FingerprintAuthenticationResult(FingerprintResult.HELP, helpString));
-	}
+    @Override
+    protected void onAuthenticationHelp(Subscriber<FingerprintAuthenticationResult> subscriber, int helpMessageId, String helpString) {
+        subscriber.onNext(new FingerprintAuthenticationResult(FingerprintResult.HELP, helpString));
+    }
 
-	@Override
-	protected void onAuthenticationFailed(Subscriber<FingerprintAuthenticationResult> subscriber) {
-		subscriber.onNext(new FingerprintAuthenticationResult(FingerprintResult.FAILED, null));
-	}
+    @Override
+    protected void onAuthenticationFailed(Subscriber<FingerprintAuthenticationResult> subscriber) {
+        subscriber.onNext(new FingerprintAuthenticationResult(FingerprintResult.FAILED, null));
+    }
 }

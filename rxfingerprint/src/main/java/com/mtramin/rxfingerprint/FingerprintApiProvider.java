@@ -21,7 +21,7 @@ class FingerprintApiProvider {
 		try {
 			return (FingerprintManager) context.getSystemService(Context.FINGERPRINT_SERVICE);
 		} catch (Exception | NoClassDefFoundError e) {
-			Log.e("RxFingerprint", "Device with SDK >=23 doesn't provide Fingerprint APIs", e);
+			Log.e("RxFingerprint", "Device with SDK < 23 doesn't provide Fingerprint APIs", e);
 		}
 		return null;
 	}
