@@ -48,6 +48,7 @@ dependencies {
     compile "com.android.support:support-annotations:$versions.supportLibrary"
     compile "io.reactivex:rxjava:$versions.rxJava"
 
+    compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile "junit:junit:$versions.jUnit"
     testCompile "org.mockito:mockito-core:$versions.mockito"
     testCompile "org.powermock:powermock-module-junit4:$versions.powermock"
