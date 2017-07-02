@@ -59,7 +59,27 @@ public class RxFingerprint {
     private static FingerprintModule fingerprintModule;
 
     public static final void initialize(Context context) {
-        fingerprintModule = PassFingerprintModule.getInstance(context);
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            return;
+            // We use Android Keystore as a place to store a encrypted key. It's available on Android 4.3
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // try using android module first. if hardware not detected, we will use Pass
+            AndroidFingerprintModule module = AndroidFingerprintModule.getInstance();
+            if (module.isHardwareDetected(context)) {
+                // accept as a default module
+                fingerprintModule = module;
+            }
+        }
+
+        if (fingerprintModule == null) {
+            PassFingerprintModule module = PassFingerprintModule.getInstance(context);
+            if (module.isHardwareDetected(context)) {
+                fingerprintModule = module;
+            }
+        }
     }
 
     /**
