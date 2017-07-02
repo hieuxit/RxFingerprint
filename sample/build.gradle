@@ -22,6 +22,7 @@ android {
     buildToolsVersion versions.buildTools
 
     defaultConfig {
+        applicationId 'com.aiia.fingerprint'
         minSdkVersion versions.minSdk
         targetSdkVersion versions.targetSdk
         versionCode versions.code

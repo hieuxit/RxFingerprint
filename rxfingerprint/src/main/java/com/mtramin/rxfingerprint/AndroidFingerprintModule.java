@@ -19,6 +19,19 @@ import static android.Manifest.permission.USE_FINGERPRINT;
 
 public class AndroidFingerprintModule implements FingerprintModule {
 
+    private static AndroidFingerprintModule instance;
+
+    // Do not public constructor
+    private AndroidFingerprintModule() {
+    }
+
+    public static AndroidFingerprintModule getInstance() {
+        if (instance == null) {
+            instance = new AndroidFingerprintModule();
+        }
+        return instance;
+    }
+
     @Override
     @RequiresApi(Build.VERSION_CODES.M)
     public boolean fingerprintPermissionGranted(Context context) {

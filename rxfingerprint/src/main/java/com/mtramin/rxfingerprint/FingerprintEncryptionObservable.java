@@ -102,7 +102,6 @@ class FingerprintEncryptionObservable extends FingerprintObservable<FingerprintE
             subscriber.onError(e);
             return null;
         }
-
     }
 
     @Override

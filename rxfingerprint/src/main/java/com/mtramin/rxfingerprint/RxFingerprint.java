@@ -58,8 +58,8 @@ public class RxFingerprint {
 
     private static FingerprintModule fingerprintModule;
 
-    static {
-        fingerprintModule = new AndroidFingerprintModule();
+    public static final void initialize(Context context) {
+        fingerprintModule = PassFingerprintModule.getInstance(context);
     }
 
     /**
