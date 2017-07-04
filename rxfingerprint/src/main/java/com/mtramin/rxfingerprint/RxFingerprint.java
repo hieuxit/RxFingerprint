@@ -71,6 +71,7 @@ public class RxFingerprint {
             if (module.isHardwareDetected(context)) {
                 // accept as a default module
                 fingerprintModule = module;
+                return;
             }
         }
 
