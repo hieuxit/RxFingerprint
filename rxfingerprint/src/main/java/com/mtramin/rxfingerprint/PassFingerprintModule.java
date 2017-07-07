@@ -53,6 +53,11 @@ public class PassFingerprintModule implements FingerprintModule {
     }
 
     @Override
+    public boolean needAuthenticate() {
+        return false;
+    }
+
+    @Override
     public boolean fingerprintPermissionGranted(Context context) {
         return ContextCompat.checkSelfPermission(context, SPASS_PERMISSION) == PackageManager.PERMISSION_GRANTED;
     }

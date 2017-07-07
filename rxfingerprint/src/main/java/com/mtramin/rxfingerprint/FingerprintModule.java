@@ -11,6 +11,9 @@ import android.support.annotation.Nullable;
  */
 
 interface FingerprintModule {
+
+    boolean needAuthenticate();
+
     boolean fingerprintPermissionGranted(Context context);
 
     CancellationSignal createCancellationSignal();

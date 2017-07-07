@@ -55,8 +55,6 @@ class CryptoProvider {
 
     private final String keyName;
 
-    private boolean needAuthenticate;
-
     /**
      * Creates a new CryptoProvider. If a keyName is provided, uses the given key in the KeyStore
      * for cryptographic operations. The given key name is {@code null} a default key name will be
@@ -68,17 +66,12 @@ class CryptoProvider {
      * @param context context to use, may not be null
      * @param keyName keyName to use, can be null
      */
-    CryptoProvider(@NonNull Context context, @Nullable String keyName, boolean needAuthenticate) {
+    CryptoProvider(@NonNull Context context, @Nullable String keyName) {
         if (keyName == null) {
             this.keyName = ContextUtils.getPackageName(context) + "." + DEFAULT_KEY_NAME;
         } else {
             this.keyName = keyName;
         }
-        this.needAuthenticate = needAuthenticate;
-    }
-
-    CryptoProvider(@NonNull Context context, @Nullable String keyName) {
-        this(context, keyName, true);
     }
 
     /**
@@ -88,13 +81,13 @@ class CryptoProvider {
      * @return Initialized cipher for encryption operations in RxFingerprint
      */
     @TargetApi(Build.VERSION_CODES.M)
-    Cipher initEncryptionCipher() throws IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException, NoSuchProviderException, KeyStoreException {
+    Cipher initEncryptionCipher(boolean needAuthenticate) throws IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchPaddingException, NoSuchProviderException, KeyStoreException {
         try {
-            return cipherForEncryption();
+            return cipherForEncryption(needAuthenticate);
         } catch (KeyPermanentlyInvalidatedException e) {
             Log.w("RxFingerprint", "Renewing invalidated key.");
             removeKey(keyName);
-            return cipherForEncryption();
+            return cipherForEncryption(needAuthenticate);
         }
     }
 
@@ -109,9 +102,9 @@ class CryptoProvider {
         return cipher;
     }
 
-    private Cipher cipherForEncryption() throws NoSuchAlgorithmException, NoSuchPaddingException, CertificateException, UnrecoverableKeyException, KeyStoreException, NoSuchProviderException, InvalidAlgorithmParameterException, IOException, InvalidKeyException {
+    private Cipher cipherForEncryption(boolean needAuthenticate) throws NoSuchAlgorithmException, NoSuchPaddingException, CertificateException, UnrecoverableKeyException, KeyStoreException, NoSuchProviderException, InvalidAlgorithmParameterException, IOException, InvalidKeyException {
         Cipher cipher = createCipher();
-        SecretKey key = findOrCreateKey(keyName);
+        SecretKey key = findOrCreateKey(keyName, needAuthenticate);
         cipher.init(Cipher.ENCRYPT_MODE, key);
         return cipher;
     }
@@ -131,11 +124,11 @@ class CryptoProvider {
                 + KeyProperties.ENCRYPTION_PADDING_PKCS7);
     }
 
-    private SecretKey findOrCreateKey(String keyName) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, UnrecoverableKeyException, CertificateException, KeyStoreException, IOException {
+    private SecretKey findOrCreateKey(String keyName, boolean needAuthenticate) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, UnrecoverableKeyException, CertificateException, KeyStoreException, IOException {
         if (keyExists(keyName)) {
             return getKey(keyName);
         }
-        return createKey(keyName);
+        return createKey(keyName, needAuthenticate);
     }
 
     private boolean keyExists(String keyName) throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException {
@@ -153,7 +146,7 @@ class CryptoProvider {
     }
 
     @TargetApi(Build.VERSION_CODES.M)
-    private SecretKey createKey(String keyName) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
+    private SecretKey createKey(String keyName, boolean needAuthenticate) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException {
         KeyGenerator keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEY_STORE);
         keyGenerator.init(new KeyGenParameterSpec.Builder(keyName,
                 KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)

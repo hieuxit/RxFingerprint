@@ -96,7 +96,7 @@ class FingerprintEncryptionObservable extends FingerprintObservable<FingerprintE
     protected CryptoObjectWrapper initCryptoObject(Subscriber<FingerprintEncryptionResult> subscriber) {
         CryptoProvider cryptoProvider = new CryptoProvider(context, keyName);
         try {
-            Cipher cipher = cryptoProvider.initEncryptionCipher();
+            Cipher cipher = cryptoProvider.initEncryptionCipher(fingerprintModule.needAuthenticate());
             return new CryptoObjectWrapper(cipher);
         } catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchProviderException | NoSuchPaddingException | InvalidAlgorithmParameterException | CertificateException | UnrecoverableKeyException | KeyStoreException | IOException e) {
             subscriber.onError(e);

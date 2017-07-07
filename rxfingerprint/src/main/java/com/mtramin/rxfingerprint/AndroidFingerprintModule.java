@@ -33,6 +33,11 @@ public class AndroidFingerprintModule implements FingerprintModule {
     }
 
     @Override
+    public boolean needAuthenticate() {
+        return true;
+    }
+
+    @Override
     @RequiresApi(Build.VERSION_CODES.M)
     public boolean fingerprintPermissionGranted(Context context) {
         return context.checkSelfPermission(USE_FINGERPRINT) == PackageManager.PERMISSION_GRANTED;

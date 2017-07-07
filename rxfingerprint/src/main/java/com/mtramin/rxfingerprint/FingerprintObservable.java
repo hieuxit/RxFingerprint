@@ -48,7 +48,7 @@ abstract class FingerprintObservable<T> implements Observable.OnSubscribe<T> {
 
     private CancellationSignal cancellationSignal;
 
-    private FingerprintModule fingerprintModule;
+    protected FingerprintModule fingerprintModule;
 
     /**
      * Default constructor for fingerprint authentication
