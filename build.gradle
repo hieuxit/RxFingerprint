@@ -19,20 +19,19 @@ buildscript {
     apply from: 'dependencies.gradle'
 
     repositories {
+        google()
         jcenter()
     }
 
     dependencies {
         classpath gradlePlugins.android
-        classpath gradlePlugins.retrolambda
-        classpath gradlePlugins.maven
-        classpath gradlePlugins.bintray
     }
 }
 
 
 allprojects {
     repositories {
+        google()
         jcenter()
         mavenCentral()
     }
